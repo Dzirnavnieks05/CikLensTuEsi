@@ -1,102 +1,149 @@
-import pygame
-import random
-import time
+import tkinter
+from random import randint
+from time import time
+import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 
-pygame.init()
+# Iestatījumi zinātniskiem grafikiem
+sns.set(style="whitegrid", palette="muted", font_scale=1.2)
 
-WIDTH, HEIGHT = 800, 600
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Spēle")
+# Galvenie mainīgie
+GARUMS, PLATUMS = 800, 600
+RĀDIUSS = 30
+REIZES = 10
 
-Background = (255, 255, 255)
-Aplis = (0, 0, 0)
-Poga = (0, 255, 0)
+def attiestīt():
+    '''Aizved uz spēles sākuma logu.'''
+    audekls.place_forget()
+    audekls.unbind_all('<Button-1>')
+    TekstsApraksts.place(relx=0.5, rely=0.35, anchor='center')
+    IevadesLauks.place(relx=0.5, rely=0.4, anchor='center')
+    PogaSākt.place(relx=0.5, rely=0.5, anchor='center')
 
-circle_radius = 30
-num_clicks = 10
-button_width, button_height = 200, 60
+def sāktSpēli():
+    '''Uzsāk spēli.'''
+    global REIZES
 
-button_x = (WIDTH - button_width) // 2
-button_y = (HEIGHT - button_height) // 2
+    # Pārbauda ievades lauku
+    try:
+        REIZES = int(IevadesLauks.get())
+        if REIZES <= 10:
+            REIZES = 10
+    except ValueError:
+        REIZES = 10  # Noklusējuma vērtība
 
-click_distances = []
-reaction_times = []
+    # Notīra logu
+    TekstsApraksts.place_forget()
+    IevadesLauks.place_forget()
+    PogaSākt.place_forget()
 
-def draw_start_button():
-    pygame.draw.rect(screen, Poga, (button_x, button_y, button_width, button_height))
-    font = pygame.font.Font(None, 36)
-    text = font.render("Sākt spēli", True, Aplis)
-    text_rect = text.get_rect(center=(button_x + button_width // 2, button_y + button_height // 2))
-    screen.blit(text, text_rect)
+    # Pievieno audeklu, kur viss tiek zīmēts:
+    audekls.place(relx=0.5, rely=0.5, anchor='center')
 
-def play_game():
-    for _ in range(num_clicks):
-        circle_x = random.randint(circle_radius, WIDTH - circle_radius)
-        circle_y = random.randint(circle_radius, HEIGHT - circle_radius)
+    audekls.bind('<Button-1>', gājiens)
 
-        screen.fill(Background)
-        pygame.draw.circle(screen, Aplis, (circle_x, circle_y), circle_radius)
-        pygame.display.flip()
+    global izpildītas_r, laiks
+    izpildītas_r = 0
+    laiks = time()
+    laiki.clear()
+    attālumi.clear()
 
-        start_time = time.time()
-        clicked = False
-
-        while not clicked:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    return
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    end_time = time.time()
-                    mouse_x, mouse_y = event.pos
-                    clicked = True
-
-                    distance = np.sqrt((mouse_x - circle_x)**2 + (mouse_y - circle_x)**2)
-                    click_distances.append(distance)
-
-                    reaction_time = end_time - start_time
-                    reaction_times.append(reaction_time)
-
-def analyze_data():
-    if click_distances:
-        mean_distance = np.mean(click_distances)
-        std_distance = np.std(click_distances)
-        print("Vidējais attālums līdz centram:", mean_distance)
-        print("Standartnovirze:", std_distance)
-
-        mean_time = np.mean(reaction_times)
-        std_time = np.std(reaction_times)
-        print("Vidējais reakcijas laiks:", mean_time)
-        print("Reakcijas laika standartnovirze:", std_time)
-
-        print("Gausa sadalījums")
-        print("Vidējā vērtība:", mean_distance)
-        print("Standartnovirze:", std_distance)
-
-def main():
-    running = True
-    game_started = False
-
-    while running:
-        screen.fill(Background)
+def gājiens(notikums):
+    '''Pārbauda, vai uzspiests uz apļa.'''
+    if 'current' in audekls.gettags(aplis):
+        global aplis_x, aplis_y, izpildītas_r, laiks
+        laiki.append(time() - laiks)
+        laiks = time()
+        attālums = np.sqrt((notikums.x - aplis_x)**2 + (notikums.y - aplis_y)**2)
+        attālumi.append(attālums)
         
-        if not game_started:
-            draw_start_button()
-        
-        pygame.display.flip()
+        aplis_x = randint(RĀDIUSS, GARUMS - RĀDIUSS)
+        aplis_y = randint(RĀDIUSS, PLATUMS - RĀDIUSS)
+        audekls.moveto(aplis, aplis_x - RĀDIUSS, aplis_y - RĀDIUSS)
+        izpildītas_r += 1
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = event.pos
-                if not game_started and button_x <= mouse_x <= button_x + button_width and button_y <= mouse_y <= button_y + button_height:
-                    game_started = True
-                    play_game()
-                    analyze_data()
-                    running = False
+        if izpildītas_r == REIZES:
+            pabeigtSpēli()
 
-    pygame.quit()
+def pabeigtSpēli():
+    '''Aprēķina statistiku un parāda rezultātus.'''
+    attiestīt()
+    parādītStatistiku()
 
-main()
+def parādītStatistiku():
+    '''Attēlo grafikus par spēles rezultātiem.'''
+    apļu_numuri = np.arange(1, len(laiki) + 1)
+    vid_attālums = np.mean(attālumi)
+    vid_laiks = np.mean(laiki)
+
+    fig, axs = plt.subplots(2, 2, figsize=(14, 10))
+    fig.suptitle('Spēles rezultātu analīze', fontsize=16)
+
+    # 1. Apļa numurs pret attālumu līdz centram
+    axs[0, 0].plot(apļu_numuri, attālumi, marker='o', linestyle='-', color='b')
+    axs[0, 0].axhline(vid_attālums, color='r', linestyle='--', label=f'Vidējais attālums: {vid_attālums:.2f}')
+    axs[0, 0].set_title('Attālumu līdz centram')
+    axs[0, 0].set_xlabel('Apļa numurs')
+    axs[0, 0].set_ylabel('Attālums (px)')
+    axs[0, 0].legend()
+
+    # 2. Apļa numurs pret reakcijas laiku
+    axs[0, 1].plot(apļu_numuri, laiki, marker='o', linestyle='-', color='g')
+    axs[0, 1].axhline(vid_laiks, color='r', linestyle='--', label=f'Vidējais laiks: {vid_laiks:.2f}s')
+    axs[0, 1].set_title('Reakcijas laiku')
+    axs[0, 1].set_xlabel('Apļa numurs')
+    axs[0, 1].set_ylabel('Reakcijas laiks (s)')
+    axs[0, 1].legend()
+
+    # 3. Gausa sadalījums (attālumi)
+    sns.histplot(attālumi, kde=True, color='blue', ax=axs[1, 0], bins=10)
+    axs[1, 0].axvline(vid_attālums, color='r', linestyle='--', label=f'Vidējais: {vid_attālums:.2f}')
+    axs[1, 0].set_title('Attāluma sadalījums (Gausa)')
+    axs[1, 0].set_xlabel('Attēlums')
+    axs[1, 0].set_ylabel('Biežums')
+    axs[1, 0].legend()
+
+    # 4. Gausa sadalījums (reakcijas laiki)
+    sns.histplot(laiki, kde=True, color='green', ax=axs[1, 1], bins=10)
+    axs[1, 1].axvline(vid_laiks, color='r', linestyle='--', label=f'Vidējais: {vid_laiks:.2f}s')
+    axs[1, 1].set_xlabel('Reakcijas laiks (s)')
+    axs[1, 1].set_ylabel('Biežums')
+    axs[1, 1].set_title('Reakcijas laika sadalījums (Gausa)')
+    axs[1, 1].legend()
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.9)
+    plt.show()
+
+# Spēles logs:
+logs = tkinter.Tk()
+logs.title('Cik lēns tu esi?')
+logs.geometry(f'{GARUMS}x{PLATUMS}+0+0')
+logs.resizable(width=False, height=False)
+
+# Sākuma ekrāna elementi
+TekstsApraksts = tkinter.Label(logs, text='Ievadiet apļu skaitu, ar kuriem vēlaties spēlēt (min:10):', font=("Helvetica", 12))
+IevadesLauks = tkinter.Entry(logs, font=("Helvetica", 14))
+IevadesLauks.insert(0, "10")
+
+PogaSākt = tkinter.Button(logs, text='Sākt spēli', command=sāktSpēli)
+audekls = tkinter.Canvas(logs, width=GARUMS, height=PLATUMS, bg='white')
+
+# Izveido apli:
+aplis_x = randint(RĀDIUSS, GARUMS - RĀDIUSS)
+aplis_y = randint(RĀDIUSS, PLATUMS - RĀDIUSS)
+aplis = audekls.create_oval(
+    aplis_x - RĀDIUSS, aplis_y - RĀDIUSS,
+    aplis_x + RĀDIUSS, aplis_y + RĀDIUSS,
+    fill='black', outline='black'
+)
+
+# Ar spēli saistītie mainīgie:
+izpildītas_r = 0
+laiks = 0
+laiki = []
+attālumi = []
+
+attiestīt()
+logs.mainloop()
