@@ -5,11 +5,11 @@ un cik ātri viņš to spējis izdarīt. Programmas gala funkcionalitāte: Izpil
 programmu, atveras grafiskais logs. Šajā grafiskajā logā lietotājs var spēlēt aprakstīto spēli. Pēc
 spēles beigšanas, Python faila mapē saglabājas PDF grafiki ar aprakstīto statistisko analīzi.'''
 
+import os
 import tkinter
-import matplotlib.axes
-import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
+import numpy as np
 
 from random import randint
 from time import time
@@ -115,6 +115,8 @@ def gājiens(notikums):
             ax_att.plot(attālumi_, S_att*sad_gauss(attālumi_, a_vid, a_std_nov))
             
             fig.show()
+            # try:
+                
 
             attiestīt()
 
