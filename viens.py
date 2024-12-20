@@ -1,6 +1,9 @@
+import os
 import tkinter
+from datetime import datetime
 from random import randint
 from time import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -112,9 +115,17 @@ def parādītStatistiku():
     axs[1, 1].set_title('Reakcijas laika sadalījums (Gausa)')
     axs[1, 1].legend()
 
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.9)
-    plt.show()
+    fig.tight_layout()
+    fig.subplots_adjust(top=0.9)
+    fig.show()
+
+    #Izveido rezultātu mapi, ja tādas nav:
+    try:
+        os.mkdir('Rezultāti')
+    except:
+        pass
+    #Saglabā grafiku
+    fig.savefig(f'Rezultāti/{str(time())}.pdf')
 
 # Spēles logs:
 logs = tkinter.Tk()
