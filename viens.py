@@ -16,6 +16,8 @@ GARUMS, PLATUMS = 800, 600
 RĀDIUSS = 30
 REIZES = 10
 
+sad_gauss = lambda x, mu, s: np.exp(-np.square((x-mu)/s)/2) / (np.sqrt(2*np.pi)*s)
+
 def attiestīt():
     '''Aizved uz spēles sākuma logu.'''
     audekls.place_forget()
@@ -43,8 +45,13 @@ def sāktSpēli():
 
     # Pievieno audeklu, kur viss tiek zīmēts:
     audekls.place(relx=0.5, rely=0.5, anchor='center')
-
     audekls.bind('<Button-1>', gājiens)
+
+    #Notīra grafikus:
+    axs[0,0].clear()
+    axs[0,1].clear()
+    axs[1,0].clear()
+    axs[1,1].clear()
 
     global izpildītas_r, laiks
     izpildītas_r = 0
@@ -79,8 +86,17 @@ def parādītStatistiku():
     apļu_numuri = np.arange(1, len(laiki) + 1)
     vid_attālums = np.mean(attālumi)
     vid_laiks = np.mean(laiki)
+    std_attālums = np.std(attālumi, mean=vid_attālums)
+    std_laiks = np.std(laiki, mean=vid_laiks)
 
-    fig, axs = plt.subplots(2, 2, figsize=(14, 10))
+    N_bins = 10 #Stabiņu skaits
+    #Priekš Gausa sadalījuma
+    S_laiki = REIZES*(np.max(laiki)-np.min(laiki))/N_bins
+    S_attālumi = REIZES*(np.max(attālumi)-np.min(attālumi))/N_bins
+
+    režģis_attālumi = np.linspace(np.min(attālumi), np.max(attālumi))
+    režģis_laiks = np.linspace(np.min(laiki), np.max(laiki))
+
     fig.suptitle('Spēles rezultātu analīze', fontsize=16)
 
     # 1. Apļa numurs pret attālumu līdz centram
@@ -100,15 +116,17 @@ def parādītStatistiku():
     axs[0, 1].legend()
 
     # 3. Gausa sadalījums (attālumi)
-    sns.histplot(attālumi, kde=True, color='blue', ax=axs[1, 0], bins=10)
+    sns.lineplot(x=režģis_attālumi,color='blue', y=S_attālumi*sad_gauss(režģis_attālumi, vid_attālums, std_attālums), ax=axs[1, 0])
+    sns.histplot(attālumi, kde=False, color='blue', ax=axs[1, 0], bins=N_bins)
     axs[1, 0].axvline(vid_attālums, color='r', linestyle='--', label=f'Vidējais: {vid_attālums:.2f}')
     axs[1, 0].set_title('Attāluma sadalījums (Gausa)')
-    axs[1, 0].set_xlabel('Attēlums')
+    axs[1, 0].set_xlabel('Attālums')
     axs[1, 0].set_ylabel('Biežums')
     axs[1, 0].legend()
 
     # 4. Gausa sadalījums (reakcijas laiki)
-    sns.histplot(laiki, kde=True, color='green', ax=axs[1, 1], bins=10)
+    sns.lineplot(x=režģis_laiks,color='green', y=S_laiki*sad_gauss(režģis_laiks, vid_laiks, std_laiks), ax=axs[1, 1])
+    sns.histplot(laiki, kde=False, color='green', ax=axs[1, 1], bins=N_bins)
     axs[1, 1].axvline(vid_laiks, color='r', linestyle='--', label=f'Vidējais: {vid_laiks:.2f}s')
     axs[1, 1].set_xlabel('Reakcijas laiks (s)')
     axs[1, 1].set_ylabel('Biežums')
@@ -138,7 +156,7 @@ TekstsApraksts = tkinter.Label(logs, text='Ievadiet apļu skaitu, ar kuriem vēl
 IevadesLauks = tkinter.Entry(logs, font=("Helvetica", 14))
 IevadesLauks.insert(0, "10")
 
-PogaSākt = tkinter.Button(logs, text='Sākt spēli', command=sāktSpēli)
+PogaSākt = tkinter.Button(logs, text='Sākt spēli', command=sāktSpēli, font=("Helvetica", 14))
 audekls = tkinter.Canvas(logs, width=GARUMS, height=PLATUMS, bg='white')
 
 # Izveido apli:
@@ -155,6 +173,10 @@ izpildītas_r = 0
 laiks = 0
 laiki = []
 attālumi = []
+
+#Grafikiem
+fig, axs = plt.subplots(2, 2, figsize=(14, 10))
+
 
 attiestīt()
 logs.mainloop()
