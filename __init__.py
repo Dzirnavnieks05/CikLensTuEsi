@@ -8,6 +8,7 @@ spēles beigšanas, Python faila mapē saglabājas PDF grafiki ar aprakstīto st
 import tkinter
 from random import randint
 from time import time
+##from matplotlib import pyplot as plt
 
 #Galvenie mainīgie
 GARUMS, PLATUMS = 800, 600
@@ -34,8 +35,10 @@ def sāktSpēli():
     global izpildītas_r, laiks
     izpildītas_r = 0
     laiks = time()
-    laiki.clear()
-    attālumi.clear()
+
+##    fig.set_visible(False)
+##    ax[0].clear()
+##    ax[1].clear()
 
 
 def gājiens(notikums):
@@ -58,6 +61,9 @@ def gājiens(notikums):
             print('Viss')
             print(laiki)
             print(attālumi)
+
+##            ax[0].bar(laiki, int(2*REIZES**(1/3)+1))
+##            fig.show()
             attiestīt()
 
 #Spēles logs:
@@ -83,6 +89,14 @@ izpildītas_r = 0
 laiks = 0
 laiki = []
 attālumi = []
+
+##fig, ax = plt.subplots(2, 1)
+##ax[0].set(
+##    title='Reakcijas laiks'
+##)
+##ax[1].set(
+##    title='Attālums no centra'
+##)
 
 
 
